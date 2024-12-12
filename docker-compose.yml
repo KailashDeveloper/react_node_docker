@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  db: # MySQL service
+    image: mysql:8.0
+    environment:
+      - MYSQL_DATABASE=appdb
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=pass123
+      - MYSQL_ROOT_PASSWORD=pass123
+    networks:
+      - sameNetworkAsMysql
+    ports:
+      - 3307:3306
+
+  api: # Backend service
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    volumes:
+      - ./backend:/app # Mount backend for live updates
+    networks:
+      - sameNetworkAsMysql
+    depends_on:
+      - db
+
+  frontend: # Frontend service
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - 3001:3000 # Change to match the React server
+    volumes:
+      - ./frontend:/app # Mount frontend for live updates
+    networks:
+      - sameNetworkAsMysql
+    depends_on:
+      - api
+
+  phpmyadmin: # phpMyAdmin service
+    image: phpmyadmin/phpmyadmin:latest
+    environment:
+      - PMA_HOST=db
+      - PMA_PORT=3306
+      - UPLOAD_LIMIT=1G
+    ports:
+      - 9000:80
+    networks:
+      - sameNetworkAsMysql
+    depends_on:
+      - db
+
+networks:
+  sameNetworkAsMysql:
+    driver: bridge
